@@ -44,9 +44,9 @@ def conclusion(paper: Paper):
         ('human', ASK_PROMPT)
     ])
 
-    # llm = load_gpt()
+    llm = load_gpt()
 
-    chain = {'info': formatter} | prompt# | llm
+    chain = {'info': formatter} | prompt | llm
 
     result = chain.stream({'paper': paper})
 
