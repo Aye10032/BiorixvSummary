@@ -3,7 +3,9 @@ import os.path
 import streamlit as st
 from tqdm import tqdm
 
-from util.biorxiv_fetcher import Category, get_daily_papers, Paper, YESTERDAY
+from path import get_work_path
+from util.biorxiv_fetcher import Category, get_daily_papers, Paper, YESTERDAY, download_pdf
+from util.file_util import get_image, compress_folder
 from util.llm_integration import conclusion
 
 st.set_page_config(
@@ -16,7 +18,8 @@ category_options = [category.value for category in Category]
 if 'summary_history' not in st.session_state:
     st.session_state.summary_history = []
 
-output_file = f"{YESTERDAY}-summary.md"
+output_file = os.path.join(get_work_path(), "output", f"{YESTERDAY}-summary.md")
+os.makedirs('output', exist_ok=True)
 
 st.title("每日文献总结")
 col1, col2 = st.columns([2, 3], gap='medium')
@@ -34,9 +37,9 @@ with col1:
     st.button("生成", key="generate")
 
     if st.session_state.generate:
-        with open(output_file, "w") as fout:
-            fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读\t\n")
-            with st.status("下载文献信息..", expanded=True) as status:
+        with st.status("下载文献信息..", expanded=True) as status:
+            with open(output_file, "w", encoding='utf-8') as fout:
+                fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读\t\n")
                 all_paper = get_daily_papers()
                 new_paper = all_paper[all_paper['version'] == '1']
                 st.write("文献下载完毕")
@@ -50,31 +53,42 @@ with col1:
                     index = 1
                     for _, row in tqdm(cat_paper.iterrows(), total=total):
                         status.update(label=f"处理{cat}类别的文献({index}/{total})")
-                        test_paper = Paper.from_dict(row)
+                        _paper = Paper.from_dict(row)
 
-                        user_log = f"请总结文献《{test_paper.title}》"
+                        user_log = f"请总结文献《{_paper.title}》"
                         chat_container.chat_message("human").write(user_log)
                         st.session_state.summary_history.append({'role': 'user', 'content': user_log})
 
-                        response = conclusion(test_paper)
+                        response = conclusion(_paper)
                         translate_result = chat_container.chat_message("ai").write_stream(response)
                         st.session_state.summary_history.append({'role': 'assistant', 'content': translate_result})
                         index += 1
 
+                        pdf_file = download_pdf(_paper.doi)
+                        first_image = get_image(pdf_file)
+
                         fout.write(
-                            f"### {test_paper.title}\t\n"
-                            f"> {test_paper.authors}\n"
-                            f"> {test_paper.author_corresponding_institution}\n\n"
-                            f"[原文链接](https://doi.org/{test_paper.doi})\n"
+                            f"### {_paper.title}\t\n"
+                            f"> {_paper.authors}\n"
+                            f"> {_paper.author_corresponding_institution}\n\n"
+                            f"[原文链接](https://doi.org/{_paper.doi})\t\n"
                             f"{translate_result}\t\n"
                         )
 
-                    st.write(f"{cat}分类文献总结生成完毕")
-                status.update(
-                    label="总结完毕",
-                    state="complete"
-                )
+                        if first_image != "":
+                            fout.write(f"![]({first_image})\t\n")
 
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            st.download_button("下载", data=f, type="primary", file_name=output_file, mime="text/plain")
+                    st.write(f"{cat}分类文献总结生成完毕")
+
+            status.update(label="压缩文件...")
+            compress_folder()
+            st.write("文件压缩完毕")
+
+            status.update(
+                label="总结完毕",
+                state="complete"
+            )
+
+    if os.path.exists(f'{YESTERDAY}-summary.zip'):
+        with open(f'{YESTERDAY}-summary.zip', 'rb') as f:
+            st.download_button("下载", data=f, type="primary", file_name=f'{YESTERDAY}-summary.zip', mime="application/octet-stream")

@@ -1,3 +1,5 @@
+import os
+import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -5,7 +7,9 @@ from enum import StrEnum
 import requests
 from loguru import logger
 from pandas import DataFrame, Series
-from tqdm import tqdm
+
+from path import get_work_path
+from util.decorator import retry
 
 CONTENT_ENDPOINT = 'https://api.biorxiv.org/details/biorxiv'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
@@ -66,11 +70,16 @@ class Category(StrEnum):
     Zoology = "zoology"
 
 
+@retry(delay=random.uniform(2.0, 5.0))
 def get_daily_papers() -> DataFrame:
-    """Retrieve the daily papers from BioRxiv.
+    """
+    Fetches the daily papers from BioRxiv for the previous day.
 
     Returns:
+        DataFrame: A DataFrame containing the collection of papers.
 
+    Raises:
+        Exception: If the download of the information fails.
     """
     logger.info(f"开始下载{YESTERDAY}的BioRxiv预印本信息...")
     url = f"{CONTENT_ENDPOINT}/{YESTERDAY}/{YESTERDAY}/0/json"
@@ -89,14 +98,30 @@ def get_daily_papers() -> DataFrame:
     return DataFrame(response['collection'])
 
 
-def main() -> None:
-    paper = get_daily_papers()
-    new_paper = paper[(paper['version'] == '1') & (paper['category'] == Category.Bioinformatics)]
-    total = new_paper.shape[0]
-    for index, row in tqdm(new_paper.iterrows(), total=total):
-        test_paper = Paper.from_dict(row)
-        print(test_paper)
+@retry(delay=random.uniform(2.0, 5.0))
+def download_pdf(doi: str) -> str:
+    """
+    Download the PDF of a paper from BioRxiv using its DOI.
 
+    Args:
+        doi (str): The DOI of the paper to download.
 
-if __name__ == '__main__':
-    main()
+    Returns:
+        str: The file path where the downloaded PDF is saved.
+
+    Raises:
+        Exception: If the PDF download fails.
+    """
+    url = f"https://www.biorxiv.org/content/{doi}v1.full.pdf"
+    pdf_path = os.path.join(get_work_path(), 'output', doi.replace('/', '@'), f"{doi.replace('/', '@')}.pdf")
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+        with open(pdf_path, 'wb') as file:
+            file.write(response.content)
+    else:
+        logger.error(f"Failed to download PDF. HTTP status code: {response.status_code}")
+        raise Exception("下载PDF失败")
+
+    return pdf_path
