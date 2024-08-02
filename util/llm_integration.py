@@ -48,6 +48,6 @@ def conclusion(paper: Paper):
 
     chain = {'info': formatter} | prompt | llm
 
-    result = chain.invoke({'paper': paper})
+    result = chain.stream({'paper': paper})
 
     return result
