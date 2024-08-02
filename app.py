@@ -1,4 +1,4 @@
-import time
+import os.path
 
 import streamlit as st
 from tqdm import tqdm
@@ -16,6 +16,8 @@ category_options = [category.value for category in Category]
 if 'summary_history' not in st.session_state:
     st.session_state.summary_history = []
 
+output_file = f"{YESTERDAY}-summary.md"
+
 st.title("每日文献总结")
 col1, col2 = st.columns([2, 3], gap='medium')
 
@@ -32,19 +34,22 @@ with col1:
     st.button("生成", key="generate")
 
     if st.session_state.generate:
-        with open("summary.md", "w") as fout:
-            fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读")
+        with open(output_file, "w") as fout:
+            fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读\t\n")
             with st.status("下载文献信息..", expanded=True) as status:
                 all_paper = get_daily_papers()
                 new_paper = all_paper[all_paper['version'] == '1']
                 st.write("文献下载完毕")
                 for cat in st.session_state.categories:
-                    fout.write(f"## {cat}")
                     cat_paper = new_paper[new_paper['category'] == cat]
                     total = cat_paper.shape[0]
+
+                    if not total == 0:
+                        fout.write(f"## {cat}\t\n")
+
                     index = 1
                     for _, row in tqdm(cat_paper.iterrows(), total=total):
-                        status.update(label=f"处理{cat}类别的文献({index + 1}/{total})")
+                        status.update(label=f"处理{cat}类别的文献({index}/{total})")
                         test_paper = Paper.from_dict(row)
 
                         user_log = f"请总结文献《{test_paper.title}》"
@@ -57,11 +62,11 @@ with col1:
                         index += 1
 
                         fout.write(
-                            f"### {test_paper.title}\n"
+                            f"### {test_paper.title}\t\n"
                             f"> {test_paper.authors}\n"
                             f"> {test_paper.author_corresponding_institution}\n\n"
                             f"[原文链接](https://doi.org/{test_paper.doi})\n"
-                            f"{translate_result}\n\n"
+                            f"{translate_result}\t\n"
                         )
 
                     st.write(f"{cat}分类文献总结生成完毕")
@@ -70,4 +75,6 @@ with col1:
                     state="complete"
                 )
 
-        st.download_button("下载", data="summary.md", type="primary")
+    if os.path.exists(output_file):
+        with open(output_file, 'r') as f:
+            st.download_button("下载", data=f, type="primary", file_name=output_file, mime="text/plain")
