@@ -3,7 +3,7 @@ import time
 import streamlit as st
 from tqdm import tqdm
 
-from util.biorxiv_fetcher import Category, get_daily_papers, Paper
+from util.biorxiv_fetcher import Category, get_daily_papers, Paper, YESTERDAY
 from util.llm_integration import conclusion
 
 st.set_page_config(
@@ -32,29 +32,42 @@ with col1:
     st.button("生成", key="generate")
 
     if st.session_state.generate:
-        with st.status("下载文献信息..", expanded=True) as status:
-            all_paper = get_daily_papers()
-            new_paper = all_paper[all_paper['version'] == '1']
-            st.write("文献下载完毕")
-            for cat in st.session_state.categories:
-                cat_paper = new_paper[new_paper['category'] == cat]
-                total = cat_paper.shape[0]
-                for index, row in tqdm(cat_paper.iterrows(), total=total):
-                    status.update(label=f"处理{cat}类别的文献({index + 1}/{total})")
-                    test_paper = Paper.from_dict(row)
+        with open("summary.md", "w") as fout:
+            fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读")
+            with st.status("下载文献信息..", expanded=True) as status:
+                all_paper = get_daily_papers()
+                new_paper = all_paper[all_paper['version'] == '1']
+                st.write("文献下载完毕")
+                for cat in st.session_state.categories:
+                    fout.write(f"## {cat}")
+                    cat_paper = new_paper[new_paper['category'] == cat]
+                    total = cat_paper.shape[0]
+                    index = 1
+                    for _, row in tqdm(cat_paper.iterrows(), total=total):
+                        status.update(label=f"处理{cat}类别的文献({index + 1}/{total})")
+                        test_paper = Paper.from_dict(row)
 
-                    user_log = f"请总结文献《{test_paper.title}》"
-                    chat_container.chat_message("human").write(user_log)
-                    st.session_state.summary_history.append({'role': 'user', 'content': user_log})
+                        user_log = f"请总结文献《{test_paper.title}》"
+                        chat_container.chat_message("human").write(user_log)
+                        st.session_state.summary_history.append({'role': 'user', 'content': user_log})
 
-                    response = conclusion(test_paper)
-                    translate_result = chat_container.chat_message("ai").write_stream(response)
-                    st.session_state.summary_history.append({'role': 'assistant', 'content': translate_result})
+                        response = conclusion(test_paper)
+                        translate_result = chat_container.chat_message("ai").write_stream(response)
+                        st.session_state.summary_history.append({'role': 'assistant', 'content': translate_result})
+                        index += 1
 
-                st.write(f"{cat}分类文献总结生成完毕")
-            status.update(
-                label="总结完毕",
-                state="complete"
-            )
+                        fout.write(
+                            f"### {test_paper.title}\n"
+                            f"> {test_paper.authors}\n"
+                            f"> {test_paper.author_corresponding_institution}\n\n"
+                            f"[原文链接](https://doi.org/{test_paper.doi})\n"
+                            f"{translate_result}\n\n"
+                        )
 
-        # st.download_button("下载", type="primary")
+                    st.write(f"{cat}分类文献总结生成完毕")
+                status.update(
+                    label="总结完毕",
+                    state="complete"
+                )
+
+        st.download_button("下载", data="summary.md", type="primary")
