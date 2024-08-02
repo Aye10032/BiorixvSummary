@@ -16,7 +16,7 @@ YESTERDAY = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 class Paper:
     doi: str
     title: str
-    authors: list[str]
+    authors: str
     author_corresponding: str
     author_corresponding_institution: str
     date: str
