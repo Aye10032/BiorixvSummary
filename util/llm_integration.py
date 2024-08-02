@@ -12,7 +12,7 @@ from util.biorxiv_fetcher import Paper
 SYSTEM_PROMPT = """You are an expert research assistant specializing in summarizing academic papers.
 Your task is to provide a concise and comprehensive summary of a given academic paper."""
 
-ASK_PROMPT = """请用尽可能简短的语言给出的文献内容进行总结。下面是文献的相关信息：\n{info}"""
+ASK_PROMPT = """下面是文献的相关信息：\n{info}\n\n请用中文以尽可能简洁的语言给出的文献内容进行总结。"""
 
 
 def load_gpt() -> ChatOpenAI:
