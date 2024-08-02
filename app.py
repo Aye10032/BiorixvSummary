@@ -40,6 +40,8 @@ with col1:
         with st.status("下载文献信息..", expanded=True) as status:
             with open(output_file, "w", encoding='utf-8') as fout:
                 fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读\t\n")
+                fout.write("> 本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。\t\n\n\n")
+
                 all_paper = get_daily_papers()
                 new_paper = all_paper[all_paper['version'] == '1']
                 st.write("文献下载完毕")
@@ -72,11 +74,11 @@ with col1:
                             f"> {_paper.authors}\n"
                             f"> {_paper.author_corresponding_institution}\n\n"
                             f"[原文链接](https://doi.org/{_paper.doi})\t\n"
-                            f"{translate_result}\t\n"
+                            f"{translate_result}\t\n\n"
                         )
 
                         if first_image != "":
-                            fout.write(f"![]({first_image})\t\n")
+                            fout.write(f"![]({first_image})\t\n\n")
 
                     st.write(f"{cat}分类文献总结生成完毕")
 

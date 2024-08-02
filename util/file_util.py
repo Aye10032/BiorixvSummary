@@ -78,7 +78,7 @@ def get_image(pdf_path: str) -> str:
                 fout.write(imgdata)
 
             if first_image == "":
-                first_image = img_file
+                first_image = os.path.relpath(img_file, os.path.join(get_work_path(), 'output'))
 
             xref_list.append(xref)
 
