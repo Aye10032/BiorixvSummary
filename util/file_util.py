@@ -73,7 +73,7 @@ def get_image(pdf_path: str) -> str:
             # if len(imgdata) / (width * height * n) <= 0.05:
             #     continue
 
-            img_file = os.path.join(os.path.dirname(pdf_path), f"page_{pno}_img_{xref}.{image['ext']}")
+            img_file = os.path.join(os.path.dirname(pdf_path).replace('tmp', 'output'), f"page_{pno}_img_{xref}.{image['ext']}")
             with open(img_file, "wb") as fout:
                 fout.write(imgdata)
 

@@ -34,18 +34,34 @@ with chat_container:
 
 with col1:
     st.multiselect("筛选领域", category_options, [Category.Bioinformatics], key="categories")
+    st.toggle("全部分类", key="all_category")
     st.button("生成", key="generate")
 
     if st.session_state.generate:
         with st.status("下载文献信息..", expanded=True) as status:
             with open(output_file, "w", encoding='utf-8') as fout:
                 fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读\t\n")
-                fout.write("> 本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。\t\n\n\n")
 
                 all_paper = get_daily_papers()
-                new_paper = all_paper[all_paper['version'] == '1']
+                new_paper = all_paper[all_paper['version'] == '1'].sort_values(by='category')
+                total = new_paper.shape[0]
+                fout.write(f"昨日共有{total}篇新发布预印本，分类统计如下：\t\n")
+
+                category_table = new_paper['category'].value_counts().reset_index()
+                markdown_table = category_table.to_markdown(index=False)
+                fout.write(markdown_table)
+                fout.write(
+                    "\n\n"
+                    "> 本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。\t\n\n\n"
+                )
+
                 st.write("文献下载完毕")
-                for cat in st.session_state.categories:
+                if st.session_state.all_category:
+                    category_list = all_paper['category'].unique().tolist()
+                else:
+                    category_list = st.session_state.categories
+
+                for cat in category_list:
                     cat_paper = new_paper[new_paper['category'] == cat]
                     total = cat_paper.shape[0]
 
@@ -71,8 +87,8 @@ with col1:
 
                         fout.write(
                             f"### {_paper.title}\t\n"
-                            f"> {_paper.authors}\n"
-                            f"> {_paper.author_corresponding_institution}\n\n"
+                            f"> {_paper.authors}\t\n"
+                            f"> {_paper.author_corresponding_institution}\t\n\n"
                             f"[原文链接](https://doi.org/{_paper.doi})\t\n"
                             f"{translate_result}\t\n\n"
                         )

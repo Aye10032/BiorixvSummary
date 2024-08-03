@@ -113,7 +113,7 @@ def download_pdf(doi: str) -> str:
         Exception: If the PDF download fails.
     """
     url = f"https://www.biorxiv.org/content/{doi}v1.full.pdf"
-    pdf_path = os.path.join(get_work_path(), 'output', doi.replace('/', '@'), f"{doi.replace('/', '@')}.pdf")
+    pdf_path = os.path.join(get_work_path(), 'tmp', doi.replace('/', '@'), f"{doi.replace('/', '@')}.pdf")
     response = requests.get(url)
 
     if response.status_code == 200:
