@@ -90,7 +90,7 @@ with col1:
                         )
 
                         if first_image != "":
-                            fout.write(f"![]({first_image})\t\r\n")
+                            fout.write(f"![]({os.path.relpath(first_image, os.path.dirname(output_file))})\t\r\n")
 
                     st.write(f"{cat}分类文献总结生成完毕")
 
