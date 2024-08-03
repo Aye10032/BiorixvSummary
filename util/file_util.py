@@ -6,6 +6,8 @@ import fitz
 
 from path import get_work_path
 
+yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+
 
 def recover_pix(doc, item):
     xref = item[0]  # xref of PDF image
@@ -76,7 +78,10 @@ def get_image(pdf_path: str) -> str:
             # if len(imgdata) / (width * height * n) <= 0.05:
             #     continue
 
-            img_file = os.path.join(os.path.dirname(pdf_path).replace('tmp', 'output'), f"page_{pno}_img_{xref}.{image['ext']}")
+            img_file = os.path.join(
+                os.path.dirname(pdf_path).replace('tmp', f'{yesterday}-summary'),
+                f"page_{pno}_img_{xref}.{image['ext']}"
+            )
             os.makedirs(os.path.dirname(img_file), exist_ok=True)
             with open(img_file, "wb") as fout:
                 fout.write(imgdata)
@@ -84,15 +89,14 @@ def get_image(pdf_path: str) -> str:
             img_list.append(img_file)
             xref_list.append(xref)
 
-    return img_list[0]
+    return img_list[0] if len(img_list) > 0 else ""
 
 
 def compress_folder():
     output_path = get_work_path()
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     shutil.make_archive(
         f'{yesterday}-summary',
         'zip',
         output_path,
-        'output'
+        f'{yesterday}-summary'
     )

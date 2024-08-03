@@ -99,11 +99,12 @@ def get_daily_papers() -> DataFrame:
 
 
 @retry(delay=random.uniform(2.0, 5.0))
-def download_pdf(doi: str) -> str:
+def download_pdf(base_path: str | bytes, doi: str) -> str:
     """
     Download the PDF of a paper from BioRxiv using its DOI.
 
     Args:
+        base_path:
         doi (str): The DOI of the paper to download.
 
     Returns:
@@ -113,7 +114,7 @@ def download_pdf(doi: str) -> str:
         Exception: If the PDF download fails.
     """
     url = f"https://www.biorxiv.org/content/{doi}v1.full.pdf"
-    pdf_path = os.path.join(get_work_path(), 'tmp', doi.replace('/', '@'), f"{doi.replace('/', '@')}.pdf")
+    pdf_path = os.path.join(base_path, doi.replace('/', '@'), f"{doi.replace('/', '@')}.pdf")
     response = requests.get(url)
 
     if response.status_code == 200:

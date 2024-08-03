@@ -1,4 +1,5 @@
 import os.path
+import shutil
 
 import streamlit as st
 from tqdm import tqdm
@@ -18,9 +19,6 @@ category_options = [category.value for category in Category]
 if 'summary_history' not in st.session_state:
     st.session_state.summary_history = []
 
-output_file = os.path.join(get_work_path(), "output", f"{YESTERDAY}-summary.md")
-os.makedirs('output', exist_ok=True)
-
 st.title("每日文献总结")
 col1, col2 = st.columns([2, 3], gap='medium')
 
@@ -33,40 +31,38 @@ with chat_container:
             st.write(message['content'])
 
 with col1:
-    st.multiselect("筛选领域", category_options, [Category.Bioinformatics], key="categories")
     st.toggle("全部分类", key="all_category")
+    st.multiselect("筛选领域", category_options, [Category.Bioinformatics], key="categories", disabled=st.session_state.all_category)
     st.button("生成", key="generate")
 
     if st.session_state.generate:
         with st.status("下载文献信息..", expanded=True) as status:
-            with open(output_file, "w", encoding='utf-8') as fout:
-                fout.write(f"# {YESTERDAY} BiorRxiv新发布预印本速读\t\n")
+            all_paper = get_daily_papers()
+            new_paper = all_paper[all_paper['version'] == '1'].sort_values(by='category')
+            total = new_paper.shape[0]
 
-                all_paper = get_daily_papers()
-                new_paper = all_paper[all_paper['version'] == '1'].sort_values(by='category')
-                total = new_paper.shape[0]
-                fout.write(f"昨日共有{total}篇新发布预印本，分类统计如下：\t\n")
+            st.write("文献下载完毕")
+            if st.session_state.all_category:
+                category_list = all_paper['category'].unique().tolist()
+            else:
+                category_list = st.session_state.categories
 
-                category_table = new_paper['category'].value_counts().reset_index()
-                markdown_table = category_table.to_markdown(index=False)
-                fout.write(markdown_table)
-                fout.write(
-                    "\n\n"
-                    "> 本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。\t\n\n\n"
-                )
+            for cat in category_list:
+                cat_paper = new_paper[new_paper['category'] == cat]
+                total = cat_paper.shape[0]
 
-                st.write("文献下载完毕")
-                if st.session_state.all_category:
-                    category_list = all_paper['category'].unique().tolist()
-                else:
-                    category_list = st.session_state.categories
+                if total == 0:
+                    continue
 
-                for cat in category_list:
-                    cat_paper = new_paper[new_paper['category'] == cat]
-                    total = cat_paper.shape[0]
+                base_path = os.path.join(get_work_path(), 'tmp', cat)
+                output_file = os.path.join(get_work_path(), f'{YESTERDAY}-summary', cat, f"{YESTERDAY}-summary.md")
+                os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-                    if not total == 0:
-                        fout.write(f"## {cat}\t\n")
+                with open(output_file, "w", encoding='utf-8') as fout:
+                    fout.write(
+                        f"# {YESTERDAY} BiorRxiv新发布预印本速读--{cat}篇\t\n\n"
+                        "> 本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。\t\n\n\n"
+                    )
 
                     index = 1
                     for _, row in tqdm(cat_paper.iterrows(), total=total):
@@ -82,24 +78,25 @@ with col1:
                         st.session_state.summary_history.append({'role': 'assistant', 'content': translate_result})
                         index += 1
 
-                        pdf_file = download_pdf(_paper.doi)
+                        pdf_file = download_pdf(base_path, _paper.doi)
                         first_image = get_image(pdf_file)
 
                         fout.write(
-                            f"### {_paper.title}\t\n"
-                            f"> {_paper.authors}\t\n"
-                            f"> {_paper.author_corresponding_institution}\t\n\n"
-                            f"[原文链接](https://doi.org/{_paper.doi})\t\n"
-                            f"{translate_result}\t\n\n"
+                            f"## {_paper.title}\t\r\n"
+                            f"> {_paper.authors}\t\r\n"
+                            f"> {_paper.author_corresponding_institution}\t\r\n"
+                            f"[原文链接](https://doi.org/{_paper.doi})\t\r\n"
+                            f"{translate_result}\t\r\n"
                         )
 
                         if first_image != "":
-                            fout.write(f"![]({first_image})\t\n\n")
+                            fout.write(f"![]({first_image})\t\r\n")
 
                     st.write(f"{cat}分类文献总结生成完毕")
 
             status.update(label="压缩文件...")
             compress_folder()
+            shutil.rmtree('tmp')
             st.write("文件压缩完毕")
 
             status.update(
