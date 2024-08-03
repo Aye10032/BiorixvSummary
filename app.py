@@ -82,15 +82,15 @@ with col1:
                         first_image = get_image(pdf_file)
 
                         fout.write(
-                            f"## {_paper.title}\t\r\n"
-                            f"> {_paper.authors}\t\r\n"
-                            f"> {_paper.author_corresponding_institution}\t\r\n"
-                            f"[原文链接](https://doi.org/{_paper.doi})\t\r\n"
-                            f"{translate_result}\t\r\n"
+                            f"## {_paper.title}\t\n\n"
+                            f"> {_paper.authors}\t\n"
+                            f"> {_paper.author_corresponding_institution}\t\n\n"
+                            f"[原文链接](https://doi.org/{_paper.doi})\t\n"
+                            f"{translate_result}\t\n"
                         )
 
                         if first_image != "":
-                            fout.write(f"![]({os.path.relpath(first_image, os.path.dirname(output_file))})\t\r\n")
+                            fout.write(f"![]({os.path.relpath(first_image, os.path.dirname(output_file))})\t\n")
 
                     st.write(f"{cat}分类文献总结生成完毕")
 
