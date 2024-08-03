@@ -53,8 +53,11 @@ def get_image(pdf_path: str) -> str:
     page_count = doc.page_count  # number of pages
 
     xref_list = []
-    first_image = ""
+    img_list = []
     for pno in range(page_count):
+        if len(img_list) >= 4:
+            break
+
         il = doc.get_page_images(pno)
         for img in il:
             xref = img[0]
@@ -74,16 +77,14 @@ def get_image(pdf_path: str) -> str:
             #     continue
 
             img_file = os.path.join(os.path.dirname(pdf_path).replace('tmp', 'output'), f"page_{pno}_img_{xref}.{image['ext']}")
+            os.makedirs(os.path.dirname(img_file), exist_ok=True)
             with open(img_file, "wb") as fout:
                 fout.write(imgdata)
 
-            if first_image == "":
-                first_image = os.path.relpath(img_file, os.path.join(get_work_path(), 'output'))
-                break
-
+            img_list.append(img_file)
             xref_list.append(xref)
 
-    return first_image
+    return img_list[0]
 
 
 def compress_folder():
