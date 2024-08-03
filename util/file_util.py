@@ -79,6 +79,7 @@ def get_image(pdf_path: str) -> str:
 
             if first_image == "":
                 first_image = os.path.relpath(img_file, os.path.join(get_work_path(), 'output'))
+                break
 
             xref_list.append(xref)
 
