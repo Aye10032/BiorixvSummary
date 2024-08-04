@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from path import get_work_path
 from util.biorxiv_fetcher import Category, get_daily_papers, Paper, YESTERDAY, download_pdf
-from util.file_util import get_image, compress_folder
+from util.file_util import get_image, compress_folder, DocData, write_to_docx
 from util.llm_integration import conclusion
 
 st.set_page_config(
@@ -55,44 +55,44 @@ with col1:
                     continue
 
                 base_path = os.path.join(get_work_path(), 'tmp', cat)
-                output_file = os.path.join(get_work_path(), f'{YESTERDAY}-summary', cat, f"{YESTERDAY}-summary.md")
+                output_file = os.path.join(
+                    get_work_path(),
+                    f'{YESTERDAY}-summary',
+                    cat,
+                    f"{YESTERDAY} BiorRxiv新发布预印本速读--{cat.title()}篇.docx"
+                )
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-                with open(output_file, "w", encoding='utf-8') as fout:
-                    fout.write(
-                        f"# {YESTERDAY} BiorRxiv新发布预印本速读--{cat}篇\t\n\n"
-                        "> 本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。\t\n\n\n"
-                    )
+                index = 1
+                paper_data = []
+                for _, row in tqdm(cat_paper.iterrows(), total=total):
+                    status.update(label=f"处理{cat}类别的文献({index}/{total})")
+                    _paper = Paper.from_dict(row)
 
-                    index = 1
-                    for _, row in tqdm(cat_paper.iterrows(), total=total):
-                        status.update(label=f"处理{cat}类别的文献({index}/{total})")
-                        _paper = Paper.from_dict(row)
+                    user_log = f"请总结文献《{_paper.title}》"
+                    chat_container.chat_message("human").write(user_log)
+                    st.session_state.summary_history.append({'role': 'user', 'content': user_log})
 
-                        user_log = f"请总结文献《{_paper.title}》"
-                        chat_container.chat_message("human").write(user_log)
-                        st.session_state.summary_history.append({'role': 'user', 'content': user_log})
+                    response = conclusion(_paper)
+                    conclusion_result = chat_container.chat_message("ai").write_stream(response)
+                    st.session_state.summary_history.append({'role': 'assistant', 'content': conclusion_result})
+                    index += 1
 
-                        response = conclusion(_paper)
-                        translate_result = chat_container.chat_message("ai").write_stream(response)
-                        st.session_state.summary_history.append({'role': 'assistant', 'content': translate_result})
-                        index += 1
+                    pdf_file = download_pdf(base_path, _paper.doi)
+                    first_image = get_image(pdf_file)
 
-                        pdf_file = download_pdf(base_path, _paper.doi)
-                        first_image = get_image(pdf_file)
+                    paper_data.append(DocData(
+                        _paper.title,
+                        _paper.authors,
+                        _paper.author_corresponding_institution,
+                        _paper.doi,
+                        conclusion_result,
+                        first_image
+                    ))
 
-                        fout.write(
-                            f"## {_paper.title}\t\n\n"
-                            f"> {_paper.authors}\t\n"
-                            f"> {_paper.author_corresponding_institution}\t\n\n"
-                            f"[原文链接](https://doi.org/{_paper.doi})\t\n"
-                            f"{translate_result}\t\n"
-                        )
-
-                        if first_image != "":
-                            fout.write(f"![]({os.path.relpath(first_image, os.path.dirname(output_file))})\t\n")
-
-                    st.write(f"{cat}分类文献总结生成完毕")
+                status.update(label="保存结果至docx文件...")
+                write_to_docx(paper_data, output_file)
+                st.write(f"{cat}分类文献总结生成完毕")
 
             status.update(label="压缩文件...")
             compress_folder()

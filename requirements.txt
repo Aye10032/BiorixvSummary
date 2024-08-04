@@ -12,3 +12,5 @@ tabulate
 
 streamlit~=1.37.0
 pillow~=10.4.0
+
+python-docx

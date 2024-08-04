@@ -1,12 +1,25 @@
 import os
 import shutil
+from dataclasses import dataclass
 from datetime import timedelta, datetime
 
 import fitz
+from docx import Document
+from docx.shared import Pt, RGBColor, Cm
 
 from path import get_work_path
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+
+@dataclass
+class DocData:
+    title: str
+    author: str
+    institution: str
+    doi: str
+    desc: str
+    img: str
 
 
 def recover_pix(doc, item):
@@ -90,6 +103,40 @@ def get_image(pdf_path: str) -> str:
             xref_list.append(xref)
 
     return img_list[0] if len(img_list) > 0 else ""
+
+
+def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
+    document = Document()
+
+    representation = document.add_paragraph().add_run(
+        "本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。")
+    representation.font.size = Pt(14)
+    representation.font.color.rgb = RGBColor(123, 125, 125)
+
+    for data in paper_list:
+        title_run = document.add_paragraph().add_run(f"\n\n{data.title}")
+        title_run.font.size = Pt(16)
+        title_run.bold = True
+
+        author_run = document.add_paragraph().add_run(data.author)
+        author_run.font.size = Pt(12)
+        author_run.font.color.rgb = RGBColor(123, 125, 125)
+
+        institution_run = document.add_paragraph().add_run(data.institution)
+        institution_run.font.size = Pt(12)
+        institution_run.font.color.rgb = RGBColor(123, 125, 125)
+
+        url_run = document.add_paragraph().add_run(f"https://doi.org/{data.doi}")
+        url_run.font.size = Pt(12)
+        url_run.font.italic = True
+
+        desc_run = document.add_paragraph().add_run(data.desc)
+        desc_run.font.size = Pt(14)
+
+        if data.img != "":
+            document.add_picture(data.img, width=Cm(13))
+
+    document.save(output_file)
 
 
 def compress_folder():
