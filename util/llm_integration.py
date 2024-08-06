@@ -13,7 +13,7 @@ SYSTEM_PROMPT = """You are an expert research assistant specializing in summariz
 Your task is to provide a concise and comprehensive summary of a given academic paper."""
 
 ASK_PROMPT = """下面是文献的相关信息：\n{info}\n\n请用中文以简洁的语言给出的文献内容进行总结，同时务必包含文献真正关键的信息。
-尽可能不超过300字，若内容非常多，不超过500字。"""
+尽可能不超过300字，若内容非常多，不超过500字。在最后，用一句话总结这篇文献的意义，以“这项研究...”开头。"""
 
 
 def load_gpt() -> ChatOpenAI:
