@@ -118,11 +118,15 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
         title_run.font.size = Pt(16)
         title_run.bold = True
 
-        author_run = document.add_paragraph().add_run(data.author)
+        p1 = document.add_paragraph()
+        p1.paragraph_format.space_after = 1
+        author_run = p1.add_run(data.author)
         author_run.font.size = Pt(12)
         author_run.font.color.rgb = RGBColor(123, 125, 125)
 
-        institution_run = document.add_paragraph().add_run(data.institution)
+        p2 = document.add_paragraph()
+        p2.paragraph_format.space_before = 1
+        institution_run = p2.add_run(data.institution)
         institution_run.font.size = Pt(12)
         institution_run.font.color.rgb = RGBColor(123, 125, 125)
 
@@ -131,7 +135,7 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
         url_run.font.italic = True
 
         desc_run = document.add_paragraph().add_run(data.desc)
-        desc_run.font.size = Pt(14)
+        desc_run.font.size = Pt(13)
 
         if data.img != "":
             document.add_picture(data.img, width=Cm(13))
@@ -147,3 +151,28 @@ def compress_folder():
         output_path,
         f'{yesterday}-summary'
     )
+
+
+def main() -> None:
+    write_to_docx([
+        DocData(
+            "title",
+            "Aye",
+            "CAS",
+            "12345",
+            "desccccccccc",
+            ""
+        ),
+        DocData(
+            "title",
+            "Aye",
+            "CAS",
+            "12345",
+            "desccccccccc",
+            ""
+        )
+    ], "test.docx")
+
+
+if __name__ == '__main__':
+    main()
