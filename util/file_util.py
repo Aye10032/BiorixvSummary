@@ -92,7 +92,7 @@ def get_image(pdf_path: str) -> str:
             #     continue
 
             img_file = os.path.join(
-                os.path.dirname(pdf_path).replace('tmp', f'{yesterday}-summary'),
+                os.path.dirname(pdf_path),
                 f"page_{pno}_img_{xref}.{image['ext']}"
             )
             os.makedirs(os.path.dirname(img_file), exist_ok=True)

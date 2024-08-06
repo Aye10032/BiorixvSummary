@@ -60,14 +60,13 @@ with col1:
                 output_file = os.path.join(
                     get_work_path(),
                     f'{YESTERDAY}-summary',
-                    cat,
-                    f"{YESTERDAY} BiorRxiv新发布预印本速读--{cat.title()}篇.docx"
+                    f"{YESTERDAY} BiorRxiv新发布预印本速读【{cat.title()}篇】.docx"
                 )
+                os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
                 if os.path.exists(output_file):
                     st.write(f"{cat}分类文献总结生成完毕")
                     continue
-                else:
-                    os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
                 index = 1
                 paper_data = []
