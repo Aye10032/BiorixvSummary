@@ -64,9 +64,10 @@ with col1:
                     f"{YESTERDAY} BiorRxiv新发布预印本速读--{cat.title()}篇.docx"
                 )
                 if os.path.exists(output_file):
+                    st.write(f"{cat}分类文献总结生成完毕")
                     continue
                 else:
-                    os.makedirs(os.path.dirname(output_file))
+                    os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
                 index = 1
                 paper_data = []
