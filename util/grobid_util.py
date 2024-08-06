@@ -5,7 +5,7 @@ from grobid_client.grobid_client import GrobidClient
 
 
 def parse_pdf(pdf_path: str) -> str:
-    client = GrobidClient(config_path='../grobid.json')
+    client = GrobidClient(config_path='grobid.json')
     result = client.process_pdf(
         "processFulltextDocument",
         pdf_path,
