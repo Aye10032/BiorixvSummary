@@ -3,7 +3,10 @@ import re
 from bs4 import BeautifulSoup
 from grobid_client.grobid_client import GrobidClient
 
+from util.decorator import retry
 
+
+@retry
 def parse_pdf(pdf_path: str) -> str:
     client = GrobidClient(config_path='grobid.json')
     result = client.process_pdf(
