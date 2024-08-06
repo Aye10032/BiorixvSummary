@@ -63,7 +63,10 @@ with col1:
                     cat,
                     f"{YESTERDAY} BiorRxiv新发布预印本速读--{cat.title()}篇.docx"
                 )
-                os.makedirs(os.path.dirname(output_file), exist_ok=True)
+                if os.path.exists(output_file):
+                    continue
+                else:
+                    os.makedirs(os.path.dirname(output_file))
 
                 index = 1
                 paper_data = []
