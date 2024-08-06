@@ -32,12 +32,13 @@ class Paper:
     abstract: str
     published: bool
     server: str
+    more_graph: dict
 
     @classmethod
     def from_dict(cls, data: Series):
         data_dict = data.to_dict()
         version = int(data_dict.pop('version'))
-        return cls(**data_dict, version=version)
+        return cls(**data_dict, version=version, more_graph={})
 
 
 class Category(StrEnum):
