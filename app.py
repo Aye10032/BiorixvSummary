@@ -69,6 +69,8 @@ with col1:
                 paper_data = []
                 for _, row in tqdm(cat_paper.iterrows(), total=total):
                     status.update(label=f"处理{cat}类别的文献({index}/{total})")
+                    _paper = Paper.from_dict(row)
+
                     pdf_file = download_pdf(base_path, _paper.doi)
 
                     with ThreadPoolExecutor() as executor:
@@ -81,7 +83,6 @@ with col1:
                         first_image = future_first_image.result()
                         more_paragraphs = future_more_paragraphs.result()
 
-                    _paper = Paper.from_dict(row)
                     _paper.more_graph = more_paragraphs
 
                     user_log = f"请总结文献《{_paper.title}》"
