@@ -1,5 +1,6 @@
 import os.path
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
 from tqdm import tqdm
@@ -7,6 +8,7 @@ from tqdm import tqdm
 from path import get_work_path
 from util.biorxiv_fetcher import Category, get_daily_papers, Paper, YESTERDAY, download_pdf
 from util.file_util import get_image, compress_folder, DocData, write_to_docx
+from util.grobid_util import parse_pdf, extract_paragraphs
 from util.llm_integration import conclusion
 
 st.set_page_config(
@@ -67,7 +69,20 @@ with col1:
                 paper_data = []
                 for _, row in tqdm(cat_paper.iterrows(), total=total):
                     status.update(label=f"处理{cat}类别的文献({index}/{total})")
+                    pdf_file = download_pdf(base_path, _paper.doi)
+
+                    with ThreadPoolExecutor() as executor:
+                        future_first_image = executor.submit(get_image, pdf_file)
+                        future_parsed_pdf = executor.submit(parse_pdf, pdf_file)
+
+                        parsed_pdf = future_parsed_pdf.result()
+                        future_more_paragraphs = executor.submit(extract_paragraphs, parsed_pdf)
+
+                        first_image = future_first_image.result()
+                        more_paragraphs = future_more_paragraphs.result()
+
                     _paper = Paper.from_dict(row)
+                    _paper.more_graph = more_paragraphs
 
                     user_log = f"请总结文献《{_paper.title}》"
                     chat_container.chat_message("human").write(user_log)
@@ -77,9 +92,6 @@ with col1:
                     conclusion_result = chat_container.chat_message("ai").write_stream(response)
                     st.session_state.summary_history.append({'role': 'assistant', 'content': conclusion_result})
                     index += 1
-
-                    pdf_file = download_pdf(base_path, _paper.doi)
-                    first_image = get_image(pdf_file)
 
                     paper_data.append(DocData(
                         _paper.title,
