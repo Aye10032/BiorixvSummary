@@ -110,7 +110,7 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
 
     representation = document.add_paragraph().add_run(
         "本文内容为生成式AI对文章进行总结后得到，版权归原文作者所有。总结内容可靠性无保障，请仔细鉴别并以原文为准。")
-    representation.font.size = Pt(14)
+    representation.font.size = Pt(11.5)
     representation.font.color.rgb = RGBColor(123, 125, 125)
 
     for data in paper_list:
@@ -120,6 +120,7 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
 
         p1 = document.add_paragraph()
         p1.paragraph_format.space_after = 1
+        p1.paragraph_format.line_spacing = 0.9
         author_run = p1.add_run(data.author)
         author_run.font.size = Pt(12)
         author_run.font.color.rgb = RGBColor(123, 125, 125)
@@ -134,7 +135,9 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
         url_run.font.size = Pt(12)
         url_run.font.italic = True
 
-        desc_run = document.add_paragraph().add_run(data.desc)
+        p3 = document.add_paragraph()
+        p3.paragraph_format.line_spacing = 1.1
+        desc_run = p3.add_run(data.desc)
         desc_run.font.size = Pt(13)
 
         if data.img != "":
