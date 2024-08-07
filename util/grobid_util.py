@@ -6,7 +6,7 @@ from grobid_client.grobid_client import GrobidClient
 from util.decorator import retry
 
 
-@retry
+@retry(delay=1.0)
 def parse_pdf(pdf_path: str) -> str:
     client = GrobidClient(config_path='grobid.json')
     result = client.process_pdf(
