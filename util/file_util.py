@@ -136,7 +136,7 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
         url_run.font.italic = True
 
         p3 = document.add_paragraph()
-        p3.paragraph_format.line_spacing = 1.1
+        p3.paragraph_format.line_spacing = 1.75
         desc_run = p3.add_run(data.desc)
         desc_run.font.size = Pt(13)
 
