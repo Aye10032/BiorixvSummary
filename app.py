@@ -60,7 +60,7 @@ with col1:
                 output_file = os.path.join(
                     get_work_path(),
                     f'{YESTERDAY}-summary',
-                    f"{YESTERDAY} BiorRxiv新发布预印本速读【{cat.title()}篇】.docx"
+                    f"{YESTERDAY} BiorRxiv预印本速读【{cat.title()}篇】.docx"
                 )
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
