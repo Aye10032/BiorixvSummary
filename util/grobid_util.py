@@ -21,6 +21,9 @@ def parse_pdf(pdf_path: str) -> str:
         False
     )
 
+    if result[1] != 200:
+        raise Exception('download error.')
+
     return result[2]
 
 
