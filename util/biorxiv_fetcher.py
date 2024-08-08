@@ -1,10 +1,12 @@
 import os
 import random
+import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
 
 import requests
+import urllib3
 from loguru import logger
 from pandas import DataFrame, Series
 
@@ -12,7 +14,7 @@ from path import get_work_path
 from util.decorator import retry
 
 CONTENT_ENDPOINT = 'https://api.biorxiv.org/details/biorxiv'
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'
 YESTERDAY = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 
@@ -116,14 +118,28 @@ def download_pdf(base_path: str | bytes, doi: str) -> str:
     """
     url = f"https://www.biorxiv.org/content/{doi}v1.full.pdf"
     pdf_path = os.path.join(base_path, doi.replace('/', '@'), f"{doi.replace('/', '@')}.pdf")
-    response = requests.get(url)
+    headers = {
+        "User-Agent": USER_AGENT
+    }
 
-    if response.status_code == 200:
-        os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
-        with open(pdf_path, 'wb') as file:
-            file.write(response.content)
-    else:
-        logger.error(f"Failed to download PDF. HTTP status code: {response.status_code}")
-        raise Exception("下载PDF失败")
+    os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+    wget_command = ["wget", "-O", pdf_path, url]
+    for header, value in headers.items():
+        wget_command.extend(["--header", f"{header}: {value}"])
+
+    result = subprocess.run(wget_command, capture_output=True)
+
+    if result.returncode != 0:
+        error_message = result.stderr.decode()
+        logger.error(f"Failed to download PDF. Return code: {result.returncode}")
+        raise Exception(f"下载PDF {url} 失败: {error_message}")
 
     return pdf_path
+
+
+def main() -> None:
+    download_pdf('./', '10.1101/2024.08.04.606512')
+
+
+if __name__ == '__main__':
+    main()
