@@ -43,6 +43,10 @@ with col1:
             new_paper = all_paper[all_paper['version'] == '1'].sort_values(by='category')
             total = new_paper.shape[0]
 
+            if total == 0:
+                st.warning('昨日没有新发布的论文')
+                st.stop()
+
             st.write("文献下载完毕")
             if st.session_state.all_category:
                 category_list = all_paper['category'].unique().tolist()
