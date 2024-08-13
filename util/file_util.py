@@ -5,7 +5,9 @@ from datetime import timedelta, datetime
 
 import fitz
 from docx import Document
+from docx.image.exceptions import UnrecognizedImageError
 from docx.shared import Pt, RGBColor, Cm
+from loguru import logger
 
 from path import get_work_path
 
@@ -141,7 +143,10 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
         desc_run.font.size = Pt(13)
 
         if data.img != "":
-            document.add_picture(data.img, width=Cm(13))
+            try:
+                document.add_picture(data.img, width=Cm(13))
+            except UnrecognizedImageError as e:
+                logger.error(f'"{e}", {data.img}')
 
     document.save(output_file)
 
