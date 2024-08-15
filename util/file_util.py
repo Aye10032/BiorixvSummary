@@ -120,13 +120,14 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
 
         p1 = document.add_paragraph()
         p1.paragraph_format.space_after = 1
-        p1.paragraph_format.line_spacing = 0.9
+        p1.paragraph_format.line_spacing = 0.95
         author_run = p1.add_run(data.author)
         author_run.font.size = Pt(12)
         author_run.font.color.rgb = RGBColor(123, 125, 125)
 
         p2 = document.add_paragraph()
         p2.paragraph_format.space_before = 1
+        p2.paragraph_format.line_spacing = 0.95
         institution_run = p2.add_run(data.institution)
         institution_run.font.size = Pt(12)
         institution_run.font.color.rgb = RGBColor(123, 125, 125)
