@@ -11,8 +11,6 @@ from loguru import logger
 
 from path import get_work_path
 
-yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-
 
 @dataclass
 class DocData:
@@ -151,7 +149,7 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
     document.save(output_file)
 
 
-def compress_folder():
+def compress_folder(yesterday: str):
     output_path = get_work_path()
     shutil.make_archive(
         f'{yesterday}-summary',

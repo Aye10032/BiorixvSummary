@@ -15,7 +15,6 @@ from util.decorator import retry
 
 CONTENT_ENDPOINT = 'https://api.biorxiv.org/details/biorxiv'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'
-YESTERDAY = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 
 @dataclass
@@ -73,10 +72,24 @@ class Category(StrEnum):
     Zoology = "zoology"
 
 
+MAIN_LIST = [
+    Category.Biochemistry.value,
+    Category.Bioinformatics.value,
+    Category.Biophysics.value,
+    Category.CellBiology.value,
+    Category.Genetics.value,
+    Category.Genomics.value,
+    Category.Microbiology.value,
+    Category.MolecularBiology.value
+]
+
+
 @retry(delay=random.uniform(2.0, 5.0))
-def get_daily_papers() -> DataFrame:
-    """
-    Fetches the daily papers from BioRxiv for the previous day.
+def get_daily_papers(yesterday: str) -> DataFrame:
+    """Fetches the daily papers from BioRxiv for the previous day.
+
+    Args:
+        yesterday (str): The date of the previous day in the format 'YYYY-MM-DD'.
 
     Returns:
         DataFrame: A DataFrame containing the collection of papers.
@@ -84,8 +97,8 @@ def get_daily_papers() -> DataFrame:
     Raises:
         Exception: If the download of the information fails.
     """
-    logger.info(f"开始下载{YESTERDAY}的BioRxiv预印本信息...")
-    url = f"{CONTENT_ENDPOINT}/{YESTERDAY}/{YESTERDAY}/0/json"
+    logger.info(f"开始下载{yesterday}的BioRxiv预印本信息...")
+    url = f"{CONTENT_ENDPOINT}/{yesterday}/{yesterday}/0/json"
     payload = {}
     headers = {'User-Agent': USER_AGENT}
 
@@ -93,8 +106,8 @@ def get_daily_papers() -> DataFrame:
     message: dict = response['messages'][0]
     if message['status'] == "ok":
         logger.info(f"下载完毕，"
-                    f"{YESTERDAY}共有{message['total']}篇预印本信息更新，"
-                    f"其中有{message['count_new_papers']}篇新发布")
+                    f"{yesterday}共有{message['total']}篇预印本，"
+                    f"其中有{message['count_new_papers']}篇有新动态")
     else:
         raise Exception("下载信息失败")
 
