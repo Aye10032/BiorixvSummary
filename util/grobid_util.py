@@ -28,7 +28,7 @@ def parse_pdf(pdf_path: str) -> str:
 
 
 def check_title(title):
-    pattern = re.compile(r'^(Introduction|Discussions?)$', re.IGNORECASE)
+    pattern = re.compile(r'^(Introduction|Discussions|Conclusion?)$', re.IGNORECASE)
     return bool(pattern.match(title))
 
 
