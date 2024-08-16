@@ -18,6 +18,7 @@ st.set_page_config(
 )
 
 category_options = [category.value for category in Category]
+yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 if 'summary_history' not in st.session_state:
     st.session_state.summary_history = []
