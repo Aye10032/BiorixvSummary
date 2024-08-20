@@ -1,12 +1,15 @@
+import io
 import os
 import shutil
 from dataclasses import dataclass
 from datetime import timedelta, datetime
 
 import fitz
+from PIL.Image import Resampling
 from docx import Document
 from docx.image.exceptions import UnrecognizedImageError
 from docx.shared import Pt, RGBColor, Cm
+from PIL import Image
 from loguru import logger
 
 from path import get_work_path
@@ -22,7 +25,21 @@ class DocData:
     img: str
 
 
-def recover_pix(doc, item):
+def resize_image_if_needed(image_data, image_type, max_resolution=(2560, 1440)):
+    """Resize image if its dimensions exceed the specified max resolution."""
+    with Image.open(io.BytesIO(image_data)) as img:
+        # Check if the image exceeds the max resolution
+        if img.width > max_resolution[0] or img.height > max_resolution[1]:
+            # Calculate the new size while maintaining the aspect ratio
+            img.thumbnail(max_resolution, Resampling.BILINEAR)
+            output = io.BytesIO()
+            img.save(output, format=image_type)
+            return output.getvalue()
+        else:
+            return image_data
+
+
+def recover_pix(doc: Document, item):
     xref = item[0]  # xref of PDF image
     smask = item[1]  # xref of its /SMask
 
@@ -78,18 +95,11 @@ def get_image(pdf_path: str) -> str:
             xref = img[0]
             if xref in xref_list:
                 continue
-            # width = img[2]
-            # height = img[3]
-            # if min(width, height) <= 100:
-            #     continue
+
             image = recover_pix(doc, img)
-            n = image["colorspace"]
             imgdata = image["image"]
 
-            # if len(imgdata) <= 2048:
-            #     continue
-            # if len(imgdata) / (width * height * n) <= 0.05:
-            #     continue
+            imgdata = resize_image_if_needed(imgdata, image['ext'])
 
             img_file = os.path.join(
                 os.path.dirname(pdf_path),
@@ -119,14 +129,14 @@ def write_to_docx(paper_list: list[DocData], output_file: str | bytes):
         title_run.bold = True
 
         p1 = document.add_paragraph()
-        p1.paragraph_format.space_after = 1.2
+        p1.paragraph_format.space_after = 5
         p1.paragraph_format.line_spacing = 1
         author_run = p1.add_run(data.author)
         author_run.font.size = Pt(12)
         author_run.font.color.rgb = RGBColor(123, 125, 125)
 
         p2 = document.add_paragraph()
-        p2.paragraph_format.space_before = 1.2
+        p2.paragraph_format.space_before = 5
         p2.paragraph_format.line_spacing = 1
         institution_run = p2.add_run(data.institution)
         institution_run.font.size = Pt(12)

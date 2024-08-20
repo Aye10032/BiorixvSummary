@@ -74,6 +74,7 @@ class Category(StrEnum):
 
 MAIN_LIST = [
     Category.Biochemistry.value,
+    Category.Bioengineering,
     Category.Bioinformatics.value,
     Category.Biophysics.value,
     Category.CellBiology.value,
