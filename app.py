@@ -17,6 +17,10 @@ st.set_page_config(
     layout='wide',
 )
 
+os.environ["LANGCHAIN_TRACING_V2"] = 'true'
+os.environ["LANGCHAIN_API_KEY"] = st.secrets['langsmith_api']
+os.environ["LANGCHAIN_PROJECT"] = 'BioSummary'
+
 category_options = [category.value for category in Category]
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 

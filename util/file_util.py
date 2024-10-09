@@ -9,7 +9,7 @@ from PIL.Image import Resampling
 from docx import Document
 from docx.image.exceptions import UnrecognizedImageError
 from docx.shared import Pt, RGBColor, Cm
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from loguru import logger
 
 from path import get_work_path
@@ -27,16 +27,19 @@ class DocData:
 
 def resize_image_if_needed(image_data, image_type, max_resolution=(2560, 1440)):
     """Resize image if its dimensions exceed the specified max resolution."""
-    with Image.open(io.BytesIO(image_data)) as img:
-        # Check if the image exceeds the max resolution
-        if img.width > max_resolution[0] or img.height > max_resolution[1]:
-            # Calculate the new size while maintaining the aspect ratio
-            img.thumbnail(max_resolution, Resampling.BILINEAR)
-            output = io.BytesIO()
-            img.save(output, format=image_type)
-            return output.getvalue()
-        else:
-            return image_data
+    try:
+        with Image.open(io.BytesIO(image_data)) as img:
+            # Check if the image exceeds the max resolution
+            if img.width > max_resolution[0] or img.height > max_resolution[1]:
+                # Calculate the new size while maintaining the aspect ratio
+                img.thumbnail(max_resolution, Resampling.BILINEAR)
+                output = io.BytesIO()
+                img.save(output, format=image_type)
+                return output.getvalue()
+            else:
+                return image_data
+    except UnidentifiedImageError:
+        return image_data
 
 
 def recover_pix(doc: Document, item):
@@ -96,21 +99,24 @@ def get_image(pdf_path: str) -> str:
             if xref in xref_list:
                 continue
 
-            image = recover_pix(doc, img)
-            imgdata = image["image"]
+            try:
+                image = recover_pix(doc, img)
+                imgdata = image["image"]
 
-            imgdata = resize_image_if_needed(imgdata, image['ext'])
+                imgdata = resize_image_if_needed(imgdata, 'png')
 
-            img_file = os.path.join(
-                os.path.dirname(pdf_path),
-                f"page_{pno}_img_{xref}.{image['ext']}"
-            )
-            os.makedirs(os.path.dirname(img_file), exist_ok=True)
-            with open(img_file, "wb") as fout:
-                fout.write(imgdata)
+                img_file = os.path.join(
+                    os.path.dirname(pdf_path),
+                    f"page_{pno}_img_{xref}.png"
+                )
+                os.makedirs(os.path.dirname(img_file), exist_ok=True)
+                with open(img_file, "wb") as fout:
+                    fout.write(imgdata)
 
-            img_list.append(img_file)
-            xref_list.append(xref)
+                img_list.append(img_file)
+                xref_list.append(xref)
+            except:
+                logger.error('img extract error')
 
     return img_list[0] if len(img_list) > 0 else ""
 
