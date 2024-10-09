@@ -19,9 +19,10 @@ ASK_PROMPT = """下面是文献的相关信息：\n{info}\n\n请用中文以简�
 
 def load_gpt() -> ChatOpenAI:
     llm = ChatOpenAI(
-        model_name="gpt-4o-mini",
+        model_name="glm-4-flash",
+        openai_api_base='https://open.bigmodel.cn/api/paas/v4/',
         temperature=0.6,
-        openai_api_key=st.secrets['gpt_key'],
+        openai_api_key=st.secrets['gml_key'],
         streaming=True
     )
     return llm
