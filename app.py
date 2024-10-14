@@ -73,12 +73,12 @@ with col1:
                 output_file = os.path.join(
                     get_work_path(),
                     f'{yesterday}-summary',
-                    f"{yesterday} BiorRxiv预印本速读【{cat.title()}篇】.docx"
+                    f"{yesterday} BiorRxiv预印本速读【{cat.title()}】.docx"
                 ) if cat not in MAIN_LIST else os.path.join(
                     get_work_path(),
                     f'{yesterday}-summary',
                     'main',
-                    f"{yesterday} BiorRxiv预印本速读【{cat.title()}篇】.docx"
+                    f"{yesterday} BiorRxiv预印本速读【{cat.title()}】.docx"
                 )
 
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
