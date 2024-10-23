@@ -116,9 +116,15 @@ with col1:
                     st.session_state.summary_history.append({'role': 'assistant', 'content': conclusion_result})
                     index += 1
 
+                    author_list = _paper.authors.split('; ')
+                    author_str = "; ".join(author_list[:2]+['et.al.'] if len(author_list) > 2 else author_list)
+                    author_corresponding = "; ".join([
+                        f"{a}*"
+                        for a in _paper.author_corresponding.split('; ')
+                    ])
                     paper_data.append(DocData(
                         _paper.title,
-                        _paper.authors,
+                        f"{author_str}, {author_corresponding}",
                         _paper.author_corresponding_institution,
                         _paper.doi,
                         conclusion_result,

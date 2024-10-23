@@ -32,14 +32,14 @@ def load_gpt() -> ChatOpenAI:
 
 def format_paper(paper: Paper) -> str:
     formatted_str = (
-        f"Title: {paper.title}\n"
-        f"Institution: {paper.author_corresponding_institution}\n"
-        f"# Abstract\n {paper.abstract}"
+        f"**Title**: {paper.title}\n"
+        f"**Institution**: {paper.author_corresponding_institution}\n"
+        f"# Abstract\r\n {paper.abstract}"
     )
 
     if paper.more_graph:
         for title, text in paper.more_graph.items():
-            formatted_str += f"\n\n# {title}\n{text}"
+            formatted_str += f"\r\n# {title}\r\n{text}"
 
     return formatted_str
 
