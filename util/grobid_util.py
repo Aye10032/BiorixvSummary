@@ -217,11 +217,11 @@ class GrobidConnector:
 @retry(delay=1.0)
 def parse_pdf(pdf_path: str) -> str:
     grobid_config = GrobidConfig(
-        grobid_server="https://kermitt2-grobid.hf.space",
+        grobid_server="https://aye10032-grobid.hf.space",
         service="processFulltextDocument",
         batch_size=1000,
         sleep_time=5,
-        timeout=60,
+        timeout=300,
         coordinates=[
             "persName",
             "ref",
