@@ -5,11 +5,13 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
+import seaborn as sns
 import requests
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 from loguru import logger
+from matplotlib import pyplot as plt
 from openai import BadRequestError
 from pandas import DataFrame
 from pydantic import FilePath, Field, BaseModel
@@ -52,6 +54,8 @@ Here is the abstract of a research paper. Please extract 3 to 7 keywords based o
 ## Abstract
 {abstract}
 """
+
+YEAR = 24
 
 
 class KeywordResponse(BaseModel):
@@ -174,6 +178,8 @@ def get_key_words(paper_infos: DataFrame, result_path: FilePath) -> None:
 
 
 def draw_wordcloud(result_path: FilePath, image_path: FilePath, month: int):
+    os.makedirs(os.path.join(image_path, 'conclusion'), exist_ok=True)
+
     result_data = pd.read_csv(result_path)
     all_keywords = result_data['keywords'].dropna().apply(eval).explode()
     word_freq = all_keywords.value_counts()
@@ -186,11 +192,47 @@ def draw_wordcloud(result_path: FilePath, image_path: FilePath, month: int):
     ).generate_from_frequencies(filtered_word_freq)
 
     image = wordcloud.to_image()
-    image.save(os.path.join(image_path, f'conclusion_{month}.png'), 'png')
+    image.save(os.path.join(image_path, 'conclusion', f'conclusion_{YEAR}{month}.png'), 'png')
+
+    def plot_paper_counts() -> None:
+        paper_counts = result_data['category'].value_counts().reset_index()
+        paper_counts.columns = ['category', 'count']
+
+        sns.set_theme(style="whitegrid")
+        plt.figure(figsize=(10, 6))
+        sns.barplot(y='category', x='count', data=paper_counts, orient='h')
+        for index, value in enumerate(paper_counts['count']):
+            plt.text(value + 10, index, str(value), ha='left', va='center', color='dimgray')
+        plt.title('Paper Count by Category')
+        plt.ylabel('Category')
+        plt.xlabel('Count')
+        plt.tight_layout()
+        plt.savefig(os.path.join(image_path, 'conclusion', f'paper_counts_{YEAR}{month}.png'))
+
+    def plot_keyword_counts(_keyword_counts: DataFrame, _image_path: FilePath, top: int = 10) -> None:
+        _keyword_counts = _keyword_counts.head(top).reset_index()
+        _keyword_counts.columns = ['category', 'count']
+
+        sns.set_theme(style="whitegrid")
+        plt.figure(figsize=(10, 6))
+        sns.barplot(y='category', x='count', data=_keyword_counts, orient='h')
+        for index, value in enumerate(_keyword_counts['count']):
+            plt.text(value + 1, index, str(value), ha='left', va='center', color='dimgray')
+        plt.title(f'Top {top} Keywords')
+        plt.ylabel('Keyword')
+        plt.xlabel('Count')
+        plt.tight_layout()
+        plt.savefig(_image_path)
+        plt.close()
+
+    plot_paper_counts()
+    plot_keyword_counts(word_freq, os.path.join(image_path, 'conclusion', f'keyword_counts_{YEAR}{month}.png'), 20)
 
     print(filtered_word_freq)
 
     for category in tqdm(result_data['category'].unique()):
+        os.makedirs(os.path.join(image_path, category), exist_ok=True)
+
         sub_data = result_data[result_data['category'] == category]
         sub_keywords = sub_data['keywords'].dropna().apply(eval).explode()
         sub_word_freq = sub_keywords.value_counts()
@@ -203,7 +245,9 @@ def draw_wordcloud(result_path: FilePath, image_path: FilePath, month: int):
         ).generate_from_frequencies(sub_word_freq)
 
         image = sub_wordcloud.to_image()
-        image.save(os.path.join(image_path, f'{category}_{month}.png'), 'png')
+        image.save(os.path.join(image_path, category, f'wordcloud_{YEAR}{month}.png'), 'png')
+
+        plot_keyword_counts(sub_word_freq, os.path.join(image_path, category, f'keyword_counts_{YEAR}{month}.png'))
 
 
 def main() -> None:
@@ -213,7 +257,7 @@ def main() -> None:
     result_path = os.path.join('conclusion', f'result_{month}.csv')
     image_path = os.path.join('conclusion', 'image')
 
-    os.makedirs(image_path, exist_ok=True)
+    os.makedirs('conclusion', exist_ok=True)
     # get_month_data(month, raw_path)
     # data = clear_data(raw_path, clean_path)
     # get_key_words(data, result_path)
